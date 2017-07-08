@@ -10,14 +10,14 @@ include_once('vendor/phayes/geophp/geoPHP.inc');
 $date_format = 'Y-m-d';
 $cookie_file = '/tmp/cookies.txt';
 $remote_uri = 'http://planning.fingalcoco.ie/swiftlg/apas/run/WPHAPPCRITERIA';
-$monthago = time() - (30*24*60*60);
+$daysago = time() - (31*24*60*60);
 
 $formfields = array(
   'APNID.MAINBODY.WPACIS.1' => '',
   'JUSTLOCATION.MAINBODY.WPACIS.1' => '',
   'JUSTDEVDESC.MAINBODY.WPACIS.1' => '',
   'SURNAME.MAINBODY.WPACIS.1' => '',
-  'REGFROMDATE.MAINBODY.WPACIS.1' => date('d/m/Y',$monthago),
+  'REGFROMDATE.MAINBODY.WPACIS.1' => date('d/m/Y',$daysago),
   'REGTODATE.MAINBODY.WPACIS.1' => date('d/m/Y'),
   'DECFROMDATE.MAINBODY.WPACIS.1' => '',
   'DECTODATE.MAINBODY.WPACIS.1' => '',
@@ -93,16 +93,16 @@ foreach ($resultparser->find('tr') as $application) {
 	if(!(stristr($remaininginfo,'Decision Made by Fingal County Council'))) {
 		$details = new simple_html_dom();
 		$details->load($remaininginfo);
-		$date_received = date($date_format,strtotime($details->find('#apas_form',0)->find('div p',2)->plaintext));
+		$date_received = date($date_format,strtotime($details->find('#apas_form',0)->find('div p',1)->plaintext));
 		$date_scraped = date($date_format);
 		$on_notice_from = $date_received;
 		$todate = $details->find('#apas_form div',13)->plaintext;
 		if(stristr($todate,'application may be made on or before ')) {
 			$todate = explode('application may be made on or before ',$todate);
-			$on_notice_to = $todate[1];
+			$on_notice_to = date($date_format,strtotime($todate[1]));
 		} elseif (stristr($todate,'period for this application expired on ')) {
 			$todate = explode('period for this application expired on ',$todate);
-			$on_notice_to = $todate[1];
+			$on_notice_to = date($date_format,strtotime($todate[1]));
 		} else {
 			$on_notice_to = date($date_format,(strtotime($date_received) + (60*60*24*35)));
 		}
@@ -136,10 +136,10 @@ foreach ($resultparser->find('tr') as $application) {
 				scraperwiki::save(array('council_reference'), $application);
 				print (" ...saved\n");
 			} else {
-				print ("...skipping already saved record " . $application['council_reference'] . "\n");
+				print (" ...skipping already saved record " . $application['council_reference'] . "\n");
 			}
 		} else {
-			echo "...skipping because no geometry\n";
+			echo " ...skipping because no geometry\n";
 		}
 	} else {
 		echo " ...skipping because closed\n";
